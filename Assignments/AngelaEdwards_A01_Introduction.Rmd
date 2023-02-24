@@ -1,6 +1,6 @@
 ---
 title: "Assignment 1: Introduction"
-author: "Student Name"
+author: "Angela Edwards"
 output: pdf_document
 geometry: margin=2.54cm
 ---
@@ -40,14 +40,17 @@ Enter answers to the questions just below the >Answer: prompt.
 1. What are your previous experiences with data analytics, R, and Git? Include both formal and informal training.
 
 > Answer: 
+I recently completed the Google Data Analytics Professional Certificate, which includes 8 courses on various topics related to data analytics. R comprised one of the 8 courses. GitHub was mentioned throughout the coursework, but we did not work at all with it.
 
 2. Are there any components of the course about which you feel confident?
 
 > Answer: 
+I wouldn't go so far as to say I feel confident in RStudio, but since I've worked with it a good bit during the coursework I mentioned above, I do feel comfortable with the basics.
 
 3. Are there any components of the course about which you feel apprehensive?
 
 > Answer: 
+Initially, Git is a little intimidating, along with the more advanced aspects of coding in R. I'm also anticipating the inevitable glitchy issues which will be difficult to resolve.
 
 
 ## 3) GitHub
@@ -55,6 +58,7 @@ Enter answers to the questions just below the >Answer: prompt.
 Provide a link below to your forked course repository in GitHub. Make sure you have pulled all recent changes from the course repository and that you have updated your course README file, committed those changes, and pushed them to your GitHub account. 
 
 > Answer: 
+https://github.com/ae2845/EDA-Spring2023.git
 
 ## 4) Knitting
 When you have completed this document, click the `knit` button.This should produce a PDF copy of your markdown document. Submit this PDF to Sakai. 
