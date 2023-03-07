@@ -167,7 +167,8 @@ unique(Litter$collectDate)
 13. Using the `unique` function, determine how many plots were sampled at Niwot Ridge. How is the information obtained from `unique` different from that obtained from `summary`?
 
 ```{r unique and summary functions}
-# Use unique to find how many plots were sampled at Niwot Ridge. Contrast this result with the result of the summary function.
+# Use unique to find how many plots were sampled at Niwot Ridge. 
+# Contrast this result with the result of the summary function.
 unique(Litter$namedLocation)
 summary(Litter$namedLocation)
 ```
