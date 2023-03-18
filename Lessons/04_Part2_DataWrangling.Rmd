@@ -17,9 +17,9 @@ editor_options:
 
 ```{r, message = FALSE}
 getwd()
-#library(plyr)
-library(tidyverse)
-library(lubridate)
+#library(dplyr)
+#library(tidyverse)
+#library(lubridate)
 NTL.phys.data.PeterPaul <- read.csv("./Data/Processed/NTL-LTER_Lake_ChemistryPhysics_PeterPaul_Processed.csv")
 NTL.nutrient.data <- read.csv("./Data/Raw/NTL-LTER_Lake_Nutrients_Raw.csv",stringsAsFactors = TRUE)
 ```
@@ -44,18 +44,20 @@ colnames(NTL.nutrient.data.PeterPaul)
 dim(NTL.nutrient.data.PeterPaul)
 str(NTL.nutrient.data.PeterPaul)
 summary(NTL.nutrient.data.PeterPaul$lakename) 
-# Notice that other lake names didn't go away, even though they have zero values
+# Notice that the other lake names didn't go away, even though they have zero 
+# values. You can drop these lake names completely by using `droplevels` This
+# function will remove the bits that were filtered out from previous function.
 NTL.nutrient.data.PeterPaul <- droplevels(NTL.nutrient.data.PeterPaul)
 summary(NTL.nutrient.data.PeterPaul$lakename)
 summary(NTL.nutrient.data.PeterPaul$comments)
 class(NTL.nutrient.data.PeterPaul$sampledate)
 NTL.nutrient.data.PeterPaul$sampledate <- as.Date(NTL.nutrient.data.PeterPaul$sampledate, format = "%m/%d/%y")
 
-NTL.nutrient.data.PeterPaul <- 
-  NTL.nutrient.data.PeterPaul %>% #
-  mutate(month = month(sampledate)) %>% #
-  select(lakeid:daynum, month, sampledate:comments) %>% # 
-  drop_na(depth)
+NTL.nutrient.data.PeterPaul <- # result of pipe stored in original dataframe
+  NTL.nutrient.data.PeterPaul %>% # selecting the dataframe
+  mutate(month = month(sampledate)) %>% # creating month column from sampledate
+  select(lakeid:daynum, month, sampledate:comments) %>% # Reordering columns
+  drop_na(depth) # dropping all NA values in depth
 
 # Save processed nutrient file
 write.csv(NTL.nutrient.data.PeterPaul, row.names = FALSE, 
@@ -69,6 +71,8 @@ NTL.nutrient.data.PeterPaul.subset <- select(NTL.nutrient.data.PeterPaul,
                                              lakename, year4, daynum, month, sampledate, depth:po4)
 
 # write a more succinct line of code to subset the nutrient dataset. 
+#NTL.nutrient.data.PeterPaul.subset <- select(NTL.nutrient.data.PeterPaul, 
+#                                             lakename:sampledate, depth:po4)
 
 ```
 
@@ -84,14 +88,32 @@ However, there may be situations where we want to reshape our dataset, for examp
 
 We will work with the new functions from `tidyr`. For gather we will use `pivot_longer` and for spread we will use `pivot_wider`. Note that if you are familiar with `gather` and `spread` will may still use it, they are not going away, but they are not under active development.
 
+*Note that these functions are similar to the pivot table function in Excel*
+
+*pivot_longer* (older version is gather) is transforming columns into rows,
+so you're making the data longer.
+
+*pivot_wider* (older version is spread) is transforming rows into columns,
+so you're making the data wider.
+
+
 ```{r}
-# Gather nutrient data into one column
+# Gather nutrient data into one column, old style with `gather`
 #NTL.nutrient.data.PeterPaul.gathered <- gather(NTL.nutrient.data.PeterPaul.subset, "nutrient", "concentration", tn_ug:po4)
 
-# Gather nutrient data into one column using pivot_longer
+# Gather nutrient data into one column using pivot_longer. We will turn
+# four nutrient-related columns into two nutrient-related columns. 
+# One column will have the nutrient name and the 2nd column will have
+# the nutrient value for that name = all nutrient values in one column.
+# So, 2406 observations became 12030, and thus became "longer."
 NTL.nutrient.data.PeterPaul.gathered <- pivot_longer(NTL.nutrient.data.PeterPaul.subset,tn_ug:po4, names_to = "nutrient", values_to = "concentration")
 
+# But our "concentration" column has a lot of NAs. Here we'll use the `subset`
+# function which will do something similar to `filter`. is.na will return a 
+# logical operator.
 NTL.nutrient.data.PeterPaul.gathered <- subset(NTL.nutrient.data.PeterPaul.gathered, !is.na(concentration))
+# Count is asking, for each nutrient, how many observations do we have?
+# syntax is count(dataset, column)
 count(NTL.nutrient.data.PeterPaul.gathered, nutrient)
 
 write.csv(NTL.nutrient.data.PeterPaul.gathered, row.names = FALSE, 
@@ -100,14 +122,19 @@ write.csv(NTL.nutrient.data.PeterPaul.gathered, row.names = FALSE,
 # Spread nutrient data into separate columns
 #NTL.nutrient.data.PeterPaul.spread <- spread(NTL.nutrient.data.PeterPaul.gathered, nutrient, concentration)
 
-# Spread nutrient data into separate columns using pivot_wider
+# Spread nutrient data into separate columns using pivot_wider. 
+# This is the opposite to what we did above with pivot_longer.
+# This dataset now has 2404 obs, but the original had 2406. What probably happened 
+# is that a row had NAs for every nutrient and so now is no longer in the set.
 NTL.nutrient.data.PeterPaul.spread2 <- pivot_wider(NTL.nutrient.data.PeterPaul.gathered, names_from = nutrient, values_from = concentration)
 
 # Split components of cells into multiple columns
 # Opposite of 'separate' is 'unite'
+# Note that by using `separate` in the example below, the "sampledate" column 
+# disappears and is replaced by "Y", "m", and "d". 
 NTL.nutrient.data.PeterPaul.dates <- separate(NTL.nutrient.data.PeterPaul.subset, sampledate, c("Y", "m", "d"))
 
-# I recommend using lubridate rather than separate and unite.
+# LL recommends using lubridate rather than separate and unite.
 
 ```
 
