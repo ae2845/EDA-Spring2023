@@ -17,7 +17,7 @@ editor_options:
 
 ```{r, message = FALSE}
 getwd()
-#library(dplyr)
+#library(plyr)
 #library(tidyverse)
 #library(lubridate)
 NTL.phys.data.PeterPaul <- read.csv("./Data/Processed/NTL-LTER_Lake_ChemistryPhysics_PeterPaul_Processed.csv")
@@ -154,7 +154,10 @@ In dplyr, there are several types of join functions:
 Let's say we want to generate a new dataset that contains all possible physical and chemical data for Peter and Paul Lakes. In this case, we want to do a full join.
 
 ```{r}
-
+# Notice how you don't have to tell R which columns to join on, it's automatic.
+# In the console, it will show you how it did the joining:
+# "Joining with `by = join_by(lakename, year4, daynum, month, sampledate, depth)"
+# These 6 common columns come first when you look at the joined dataset.
 NTL.phys.nutrient.data.PeterPaul <- full_join(NTL.phys.data.PeterPaul.subset, NTL.nutrient.data.PeterPaul.subset)
 
 write.csv(NTL.phys.nutrient.data.PeterPaul, row.names = FALSE, 
@@ -162,11 +165,12 @@ write.csv(NTL.phys.nutrient.data.PeterPaul, row.names = FALSE,
 
 ```
 
-### rbind
+### rbind (short for row bind)
 
 The Niwot Ridge litter dataset, when downloaded from NEON, comes packaged with each month as a different .csv file. If we want to analyze the dataset as a single data frame, we need to combine each of these files. 
 
 ```{r}
+# This method would be really tedious for 20 separate datasets...
 Litter.June2016 <- read.csv("./Data/Raw/NIWO_Litter/NEON_NIWO_Litter_massdata_2016-06_raw.csv")
 Litter.July2016 <- read.csv("./Data/Raw/NIWO_Litter/NEON_NIWO_Litter_massdata_2016-07_raw.csv")
 Litter.August2016 <- read.csv("./Data/Raw/NIWO_Litter/NEON_NIWO_Litter_massdata_2016-08_raw.csv")
@@ -177,11 +181,14 @@ Litter.2019 <- rbind(Litter.June2016, Litter.July2016, Litter.August2016)
 However, there are 20 months in this dataset, so importing all these files individually would be tedious to code. Here is a more efficient way to import and combine all files.
 
 ```{r}
+# The better method is to create a list using the list.files function
+# However, I'm not sure why we're using "=" here instead of "<-"
 LitterFiles = list.files(path = "./Data/Raw/NIWO_Litter/", pattern="*.csv", full.names=TRUE)
 LitterFiles
 
+# Then use a pipe: for object Litterfiles, we're going to read each element using read.csv function.
 Litter <- LitterFiles %>%
-  plyr::ldply(read.csv)
+  ldply(read.csv)
 ```
 
 We also have information about individual traps, including the location and type of landcover. Let's join these two datasets. Note that "siteID", "plotID" and "trapID" exist in both datasets, and we can join them by these conditions. Notice the dimensions of the final dataset.
@@ -193,6 +200,7 @@ dim(Litter)
 dim(Trap)
 dim(LitterTrap)
 
+#Now let's select a few columns of interest using "select" to choose columns.
 LitterTrap <- LitterTrap %>%
   select(plotID:trapID, collectDate, functionalGroup:qaDryMass, subplotID:geodeticDatum)
 
@@ -205,6 +213,10 @@ write.csv(LitterTrap, row.names = FALSE,
 dplyr functionality, combined with the pipes operator, allows us to split datasets according to groupings (function: `group_by`), then run operations on those groupings and return the output of those operations. There is a lot of flexibility in this approach, but we will illustrate just one example today.
 
 ```{r}
+# Notice that when you run this code, you won't have any summary printouts.
+# This is because you're assigning a name to it (NTL.PeterPaul.summaries)
+# BUT why can't we see the data grouped by lake and month? I thought this was what we 
+# asked for?
 NTL.PeterPaul.summaries <- 
   NTL.phys.nutrient.data.PeterPaul %>%
   filter(depth == 0) %>%
@@ -224,4 +236,4 @@ write.csv(NTL.PeterPaul.summaries, row.names = FALSE,
 
 ## Alternative Methods for Data Wrangling
 
-If you want to iteratively perform operations on your data, there exist several options. We have demonstrated the pipe as one option. Additional options include the `apply` function (https://www.rdocumentation.org/packages/base/versions/3.5.2/topics/apply) and `for` loops (https://swcarpentry.github.io/r-novice-inflammation/15-supp-loops-in-depth/). These options are good options as well (again, multiple ways to get to the same outcome). A word of caution: loops are slow. This may not make a difference for small datasets, but small time additions will make a difference with large datasets.
+If you want to iteratively perform operations on your data, there exist several options. We have demonstrated the pipe as one option. Additional options include the `apply` function (https://www.rdocumentation.org/packages/base/versions/3.5.2/topics/apply) and `for` loops (https://swcarpentry.github.io/r-novice-inflammation/15-supp-loops-in-depth/). These options are good options as well (again, multiple ways to get to the same outcome). *A word of caution: loops are slow.* This may not make a difference for small datasets, but small time additions will make a difference with large datasets.
