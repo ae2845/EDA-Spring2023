@@ -40,24 +40,26 @@ The completed exercise is due on Friday, Feb 20th @ 5:00pm.
 2. Apply the `glimpse()` function to reveal the dimensions, column names, and structure of each dataset. 
 
 ```{r, message = FALSE}
-#1a 
+#1a Loading necessary packages.
 library(tidyverse)
 library(lubridate)
 library(here)
 library(formatR)
-library(knitr)
 
-#1b 
+# library(knitr)
+# library(plyr)
+
+#1b Checking working directory.
 getwd()
 
-#1c 
+#1c Reading in the four EPAair datasets.
 EPAair_O3_NC2018 <- read.csv("./Data/Raw/EPAair_O3_NC2018_raw.csv", stringsAsFactors = TRUE)
 EPAair_O3_NC2019 <- read.csv("./Data/Raw/EPAair_O3_NC2019_raw.csv", stringsAsFactors = TRUE)
 EPAair_PM25_NC2018 <- read.csv("./Data/Raw/EPAair_PM25_NC2018_raw.csv", stringsAsFactors = TRUE)
 EPAair_PM25_NC2019 <- read.csv("./Data/Raw/EPAair_PM25_NC2019_raw.csv", stringsAsFactors = TRUE)
 
 
-#2 
+#2 Using glimpse to peruse each dataset.
 glimpse(EPAair_O3_NC2018)
 glimpse(EPAair_O3_NC2019)
 glimpse(EPAair_PM25_NC2018)
@@ -86,28 +88,54 @@ EPAair_PM25_NC2018$Date <- as.Date(EPAair_PM25_NC2018$Date, format = "%m/%d/%Y")
 
 EPAair_PM25_NC2019$Date <- as.Date(EPAair_PM25_NC2019$Date, format = "%m/%d/%Y")
 
+# Creating unique row numbers to help with issues of duplication after subsetting.
+EPAair_O3_NC2018 <- 
+  EPAair_O3_NC2018 %>%
+  dplyr::mutate(Row=row_number()) %>%
+  relocate(Row)
+
+EPAair_O3_NC2019 <- 
+  EPAair_O3_NC2019 %>%
+  dplyr::mutate(Row=row_number()) %>%
+  relocate(Row)
+
+EPAair_PM25_NC2018 <- 
+  EPAair_PM25_NC2018 %>%
+  dplyr::mutate(Row=row_number()) %>%
+  relocate(Row)
+
+EPAair_PM25_NC2019 <- 
+  EPAair_PM25_NC2019 %>%
+  dplyr::mutate(Row=row_number()) %>%
+  relocate(Row)
+
 
 #4 Using select to choose specific columns.
-EPAair_O3_NC2018_subset <- select(EPAair_O3_NC2018, Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY, SITE_LATITUDE, SITE_LONGITUDE)
+EPAair_O3_NC2018_subset <- select(EPAair_O3_NC2018, Row, Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY:SITE_LONGITUDE)
 
-EPAair_O3_NC2019_subset <- select(EPAair_O3_NC2019, Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY:SITE_LONGITUDE)
+EPAair_O3_NC2019_subset <- select(EPAair_O3_NC2019, Row, Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY:SITE_LONGITUDE)
 
-EPAair_PM25_NC2018_subset <- select(EPAair_PM25_NC2018, Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY:SITE_LONGITUDE)
+EPAair_PM25_NC2018_subset <- select(EPAair_PM25_NC2018, Row, Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY:SITE_LONGITUDE)
 
-EPAair_PM25_NC2019_subset <- select(EPAair_PM25_NC2019, Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY:SITE_LONGITUDE)
+EPAair_PM25_NC2019_subset <- select(EPAair_PM25_NC2019, Row, Date, DAILY_AQI_VALUE, Site.Name, AQS_PARAMETER_DESC, COUNTY:SITE_LONGITUDE)
 
-#5
-# Converting factor variable into character variable for both datasets first.
+#5 For the PM2.5 datasets, fill all cells in AQS_PARAMETER_DESC with "PM2.5".
+
+# First converting AQS_PARAMETER_DESC factor variable into character variable for both datasets in order to replace the values.
 EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC <- as.character(EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC)
 
 EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC <- as.character(EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC)
 
-#Replacing current values with "PM2.5"; I couldn't get the code to accept both original character values at the same time, so I had to use an inelegant solution with longer code.
-EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC[EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC == "Acceptable PM2.5 AQI & Speciation Mass"] <- "PM2.5"
-EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC[EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC == "PM2.5 - Local Conditions"] <- "PM2.5"
+#Replacing current values with "PM2.5".
+EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC[EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC == "Acceptable PM2.5 AQI & Speciation Mass" | EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC == "PM2.5 - Local Conditions"] <- "PM2.5"
 
-EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC[EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC == "Acceptable PM2.5 AQI & Speciation Mass"] <- "PM2.5"
-EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC[EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC == "PM2.5 - Local Conditions"] <- "PM2.5"
+EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC[EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC == "Acceptable PM2.5 AQI & Speciation Mass" | EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC == "PM2.5 - Local Conditions"] <- "PM2.5"
+
+# Convert AQS_PARAMETER_DESC character variable back to factor to match up with the other datasets.
+EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC <- as.factor(EPAair_PM25_NC2018_subset$AQS_PARAMETER_DESC)
+
+EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC <- as.factor(EPAair_PM25_NC2019_subset$AQS_PARAMETER_DESC)
+
 
 #6 Saving each dataset in the processed folder. 
 write.csv(EPAair_O3_NC2018_subset, row.names = FALSE, file = "./Data/Processed/EPAair_O3_NC2018_processed.csv")
@@ -142,15 +170,123 @@ write.csv(EPAair_PM25_NC2019_subset, row.names = FALSE, file = "./Data/Processed
 11. Save your processed dataset with the following file name: "EPAair_O3_PM25_NC1819_Processed.csv"
 
 ```{r}
-#7 
+#7 Combine the four datasets with `rbind'.
+# Checking that column names are identical.
+colnames(EPAair_O3_NC2018_subset)
+colnames(EPAair_O3_NC2019_subset)
+colnames(EPAair_PM25_NC2018_subset)
+colnames(EPAair_PM25_NC2019_subset)
 
-#8 
+# Combining with 'rbind'.
+EPAairData <- rbind(EPAair_O3_NC2018_subset, EPAair_O3_NC2019_subset, EPAair_PM25_NC2018_subset, EPAair_PM25_NC2019_subset)
 
-#9
 
-#10
+#8 Create pipe for specified conditions. Dim = 14752 x 9.
+EPAairData.Processed.1 <- 
+  EPAairData %>%
+  filter(Site.Name %in% c("Linville Falls", "Durham Armory", "Leggett", "Hattie Avenue", "Clemmons Middle", "Mendenhall School", "Frying Pan Mountain", "West Johnston Co.", "Garinger High School", "Castle Hayne", "Pitt Agri. Center", "Bryson City", "Millbrook School")) %>%
+  group_by(Date, Site.Name, AQS_PARAMETER_DESC, COUNTY) %>%
+  summarise(meanAQI = mean(DAILY_AQI_VALUE),
+            meanLAT = mean(SITE_LATITUDE),
+            meanLONG = mean(SITE_LONGITUDE)) %>%
+  mutate(Month = month(Date), Year = year(Date))
+  
 
-#11
+dim(EPAairData.Processed.1)
+
+EPAairData.Processed.FUCKALL <-
+  EPAairData.Processed.1 %>%
+   pivot_wider(names_from = "AQS_PARAMETER_DESC", values_from = "DAILY_AQI_VALUE")
+
+# New pipe for second part
+EPAairData.Processed.FUCKALL.TWO <- 
+  EPAairData %>%
+  filter(Site.Name %in% c("Linville Falls", "Durham Armory", "Leggett", "Hattie Avenue", "Clemmons Middle", "Mendenhall School", "Frying Pan Mountain", "West Johnston Co.", "Garinger High School", "Castle Hayne", "Pitt Agri. Center", "Bryson City", "Millbrook School")) %>%
+  group_by(Date, Site.Name, AQS_PARAMETER_DESC, COUNTY, DAILY_AQI_VALUE) %>%
+  mutate(meanLAT = mean(SITE_LATITUDE),
+        meanLONG = mean(SITE_LONGITUDE),
+        across(Row)) %>%
+  mutate(Month = month(Date), Year = year(Date)) %>%
+  pivot_wider(names_from = "AQS_PARAMETER_DESC", values_from = "DAILY_AQI_VALUE")
+
+df %>%
+  group_by(team) %>%
+  mutate(mean_pts = mean(points)) %>%
+  ungroup()
+
+# Create new sequential row numbers for new dataset (as in dataset key).
+EPAairData.Processed.TEST2 <- 
+  EPAairData.Processed.1 %>%
+  ungroup() %>%
+  dplyr::mutate(New_Row=row_number()) %>%
+  relocate(New_Row)
+  
+# Trying to work from processed 1, but don't think i can bc of row numbers and AQI values are "gone". We need row numbers to prevent duplicates and we need AQI values to pivot wider. But when i keep them, my dataset doesn't look like the key.
+
+EPAairData.Processed.2 <-
+  EPAairData.Processed.1 %>%
+  
+
+
+
+EPAairData.Processed.SPREAD <- 
+  EPAairData %>%
+  filter(Site.Name %in% c("Linville Falls", "Durham Armory", "Leggett", "Hattie Avenue", "Clemmons Middle", "Mendenhall School", "Frying Pan Mountain", "West Johnston Co.", "Garinger High School", "Castle Hayne", "Pitt Agri. Center", "Bryson City", "Millbrook School")) %>%
+  group_by(Date, Site.Name, AQS_PARAMETER_DESC, COUNTY) %>%
+  summarise(meanAQI = mean(DAILY_AQI_VALUE),
+            meanLAT = mean(SITE_LATITUDE),
+            meanLONG = mean(SITE_LONGITUDE)) %>%
+  mutate(Month = month(Date), Year = year(Date)) %>%
+  replace(EPAairData == "NULL", NA)
+  
+
+#9 Spreading dataset so that AQI values for ozone and PM2.5 are in separate columns. Retaining "Row" column so that there are no duplicate entries in PM2.5 column because in former attempts, this created lists instead of integer columns with multiple entries in cells. Unsure if we were supposed to complete this step directly from the last one (i.e. from the grouped and summarized dataset, but I was unable to complete the steps below from that point. I need to start with the orginal dataset first.)
+
+
+EPAairData.Processed.SPREAD <- 
+  EPAairData %>%
+  filter(Site.Name %in% c("Linville Falls", "Durham Armory", "Leggett", "Hattie Avenue", "Clemmons Middle", "Mendenhall School", "Frying Pan Mountain", "West Johnston Co.", "Garinger High School", "Castle Hayne", "Pitt Agri. Center", "Bryson City", "Millbrook School")) %>%
+  pivot_wider(names_from = "AQS_PARAMETER_DESC", values_from = "DAILY_AQI_VALUE")
+  
+EPAairData.Processed.SPREADFINAL <- 
+  EPAairData.Processed.SPREAD %>%
+  group_by(Date, Site.Name, COUNTY) %>%
+  summarise(meanLAT = mean(SITE_LATITUDE),
+            meanLONG = mean(SITE_LONGITUDE),
+            across()) %>%
+  mutate(Month = month(Date), Year = year(Date))
+  
+  
+EPAairData.Processed.NONWORKING$Ozone[EPAairData.Processed.NONWORKING$Ozone == 'NULL'] <- NA 
+
+EPAairData.Processed.NONWORKING$PM2.5[EPAairData.Processed.NONWORKING$PM2.5 == 'NULL'] <- NA 
+  
+  
+  df[df == 'NULL'] <- NA
+
+  ungroup() %>%
+  dplyr::mutate(New_Row=row_number()) %>%
+  relocate(New_Row)
+
+  #trying to get last two columns from NULL to NA
+  # Also, how do I keep the Row column without grouping by it, and without losing it?
+  
+
+
+
+
+EPAairData.Final.Spread <- 
+  EPAairData.Processed %>%
+  pivot_wider(names_from = "AQS_PARAMETER_DESC", values_from = "DAILY_AQI_VALUE")
+  
+
+#10 Finding dimensions of new dataset.
+dim(EPAairData.Final.Spread)
+
+#11 Saving processed dataset. During the spreading process, the Ozone and PM2.5 columns
+# were converted into lists. So, first converting them back to integers. *NOTE* -- after creating row names for each of the datasets, this problem was eliminated and the file was able to be saved without issue.
+
+write.csv(EPAairData.Final.Spread, row.names = FALSE, file = "./Data/Processed/EPAair_O3_PM25_NC1819_Processed.csv")
 
 ```
 
@@ -163,12 +299,19 @@ write.csv(EPAair_PM25_NC2019_subset, row.names = FALSE, file = "./Data/Processed
 
 ```{r}
 
-#12
+#12 Tried using the drop_na function, but couldn't get it to work anywhere (both figures just said "NA". The na.rm resulted in actual numbers (not NA output) but not sure if it's accurate.
+EPAairData.Summary.2 <-
+  EPAairData.Final.Spread %>%
+  group_by(Site.Name, Month, Year) %>%
+  summarize(meanOzone = mean(Ozone, na.rm = TRUE),
+            meanPM2.5 = mean(PM2.5, na.rm = TRUE))
 
+# OR DO YOU START FROM SCRATCH?? THEY DON't say!
 
-#13
+            
+ #13
 
-
+dim(EPAairData.Summary.2)
 ```
 
 14. Why did we use the function `drop_na` rather than `na.omit`?
