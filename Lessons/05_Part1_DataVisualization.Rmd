@@ -48,7 +48,7 @@ ggplot has only a few rules:
 
 ### Geoms
 
-Here are some commonly used layers for plotting in ggplot: 
+Here are some commonly used layers for plotting in ggplot (*generally the second line of code*): 
 
 * geom_bar
 * geom_histogram
@@ -62,14 +62,15 @@ Here are some commonly used layers for plotting in ggplot:
 * geom_smooth
 * geom_line
 * geom_area
-* geom_abline (plus geom_hline and geom_vline)
-* geom_text
+* geom_abline *add a line that has intercept a and slope b* 
+* (plus geom_hline *horizontal line* and geom_vline *vertical line*)
+* geom_text *add text to plot or can change defaults on your labels*
 
 ### Aesthetics
 Here are some commonly used aesthetic types that can be manipulated in ggplot: 
 
 * color
-* fill
+* fill *note that color and fill may not be available together*
 * shape
 * size
 * transparency
@@ -78,26 +79,30 @@ Here are some commonly used aesthetic types that can be manipulated in ggplot:
 
 ```{r, fig.height = 3, fig.width = 4, warning = FALSE}
 # Scatterplot
+# w/ aesthetic on first line
 ggplot(EPAair, aes(x = Date, y = Ozone)) + 
   geom_point()
 
+# w/ aesthetics on 2nd line w/ geom
 O3plot <- ggplot(EPAair) +
   geom_point(aes(x = Date, y = Ozone))
 print(O3plot)
 
-# Fix this code
+# Fix this code. When you specify color *inside* the aesthetics frame,it's like you're adding another layer to your plot, not just chancing the color of the points. (When you add a new layer, (and it's just one variable) the color defaults to the first one in ggplot. I guess that's pink in this case -- note that R also added a legend when we didn't ask for it.)
 O3plot2 <- ggplot(EPAair) +
-  geom_point(aes(x = Date, y = Ozone, color = "blue"))
+  #geom_point(aes(x = Date, y = Ozone, color = "blue"))
+  geom_point(aes(x = Date, y = Ozone), color = "blue")
 print(O3plot2)
 
 # Add additional variables
 # How could you automatically assign a marker color to a variable? 
+# shape decides shape of dots (circle is default). Here we are asking R to automatically assign a different shape based on column year. We're also specifying color *inside* aesthetics here; color will be a function of Site.Name. All observations from the same site will have the same color. (Note that ggplot automatically assigns a marker or color to a variable; when using Plot in basic R, these things are all manual.)
 PMplot <- 
   ggplot(EPAair, aes(x = Month, y = PM2.5, shape = as.factor(Year), color = Site.Name)) +
   geom_point()
 print(PMplot)
 
-# Separate plot with facets
+# How can we improve the above graph, which isn't super helpful. Separate plot with facets. Instead of coloring each Site a different color as before, now we're going to create one plot for each site. (Choosing 3 rows because we have 12 sites.)
 PMplot.faceted <-
   ggplot(EPAair, aes(x = Month, y = PM2.5, shape = as.factor(Year))) +
   geom_point() +
@@ -110,10 +115,10 @@ PMplot.faceted2 <-
                   Site.Name == "Bryson City"), 
          aes(x = Month, y = PM2.5)) + 
   geom_point() +
-  facet_grid(Site.Name ~ Year) 
+  facet_grid(Site.Name ~ Year) # Site.Name by Year
 print(PMplot.faceted2)
 
-# Plot true time series with geom_line
+# Plot true time series with geom_line. (We can't connect Month as a line plot, so we put Date in x because it is ordered observations.) This is a typical example of a time series plot.
 PMplot.line <- 
   ggplot(subset(EPAair, Site.Name == "Leggett"), 
          aes(x = Date, y = PM2.5)) +
@@ -124,16 +129,18 @@ print(PMplot.line)
 ```
 
 
-### Plotting the relationship between two continuous variables: Scatterplot
+### Plotting the *relationship* between two continuous variables: Scatterplot
+
+In the last section we were using multiple variables as layers and facets, but we were only actually plotting one continuous variable (Ozone or PM2.5).
 
 ```{r, fig.height = 3, fig.width = 4, warning = FALSE}
-# Scatterplot
+# Scatterplot. Here we're putting two continuous variables in the x and y position to find relationship (rather than previously where one variable was date or month and the second was ozone or pm2.5).
 lightvsDO <- 
   ggplot(PeterPaul.chem.nutrients, aes(x = irradianceWater, y = dissolvedOxygen)) +
   geom_point()
 print(lightvsDO)
 
-# Adjust axes
+# Adjust axes (bc of the three data points that are so far from the rest of the observations.)
 lightvsDOfixed <- 
   ggplot(PeterPaul.chem.nutrients, aes(x = irradianceWater, y = dissolvedOxygen)) +
   geom_point() +
@@ -141,14 +148,17 @@ lightvsDOfixed <-
   ylim(0, 20)
 print(lightvsDOfixed)
 
-# Depth in the fields of limnology and oceanography is on a reverse scale
+# Depth in the fields of limnology and oceanography is on a reverse scale, so we use scale_y_reverse bc we want the zero to be on top and the deepest observations to be on the lowest part of the y axis. (When reversing the y-axis, the figure looks more like the actual lake, with warmer temps up top at the surface, and colder temps down low.)
 tempvsdepth <- 
   ggplot(PeterPaul.chem.nutrients, aes(x = temperature_C, y = depth)) +
   #ggplot(PeterPaul.chem.nutrients, aes(x = temperature_C, y = depth, color = daynum)) +
   geom_point() +
-  scale_y_reverse()
+  scale_y_reverse() 
 print(tempvsdepth)
 
+#Does the relationship change depending on the depth? To see this, we'll categorize the observations by depth so that the depths are different colors. (Note that we're putting color = depth inside aes.)
+
+# We also want to find a trendline for the points.Geom_smooth adds a line, here we're using lm (linear model). Now imagine that you already knew the slope and intercept; we can use geom_abline for this.
 NvsP <-
   ggplot(PeterPaul.chem.nutrients, aes(x = tp_ug, y = tn_ug, color = depth)) +
   geom_point() +
@@ -164,10 +174,10 @@ A traditional way to display summary statistics of continuous variables is a bar
 What might be more effective ways to display the information? Navigate to the boxplots page in the Caveats section to explore further.
 
 ```{r, fig.height = 3, fig.width = 4, warning = FALSE}
-# Box and whiskers plot
+# Box and whiskers plot (this is a much better way to display th e lake and nutrient data than using a barplot with error bars.)
 Nutrientplot3 <-
   ggplot(PeterPaul.chem.nutrients.gathered, aes(x = lakename, y = concentration)) +
-  geom_boxplot(aes(color = nutrient)) # Why didn't we use "fill"?
+  geom_boxplot(aes(color = nutrient)) # Why didn't we use "fill"? Color refers to the contour of the shape; whereas fill refers to the filling of the shape. Using color is best when working with boxplots. (If you changed color to fill then all the points would be black (not helpful) and the boxes would be filled in with color.)
 print(Nutrientplot3)
 
 # Dot plot
